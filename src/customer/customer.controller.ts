@@ -11,7 +11,7 @@ import { WorkService } from 'src/work/work.service';
 @ApiTags("Customer")
 @Controller('customer')
 export class CustomerController {
-  constructor(private readonly customerService: CustomerService, private readonly workService: WorkService) {}
+  constructor(private readonly customerService: CustomerService) {}
 
   @Get()
   findAll() {

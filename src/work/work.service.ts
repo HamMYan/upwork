@@ -4,18 +4,23 @@ import { UpdateWorkDto } from './dto/update-work.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Work } from 'src/work/entities/work.entity';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class WorkService {
-  constructor(@InjectModel('Work') private workModel: Model<Work>) {}
+  constructor(@InjectModel('Work') private workModel: Model<Work>,@InjectModel('User') private userModel: Model<User>) {}
 
-  async create(createWorkDto: CreateWorkDto, req) {
-    const newWork = await this.workModel.create({
-      ...createWorkDto,
-      userId: req.user.id,
-    });
-
-    return newWork.save();
+  async create(createWorkDto: CreateWorkDto, id: string) {
+    const us = await this.userModel.findById(id);
+    if(us){
+      const newWork = await this.workModel.create({
+        ...createWorkDto,
+        user: us,
+      });
+      return newWork.save();
+    }else{
+      throw new NotFoundException('User is undefined')
+    }
   }
 
   async findAll() {
@@ -31,15 +36,18 @@ export class WorkService {
   }
 
   async update(id: string, updateWorkDto: UpdateWorkDto) {
-    const updatedWork = await this.workModel.findByIdAndUpdate(id, updateWorkDto, {
-      new: true,
-    });
+    const updatedWork = await this.workModel.findByIdAndUpdate(
+      id,
+      updateWorkDto,
+      {
+        new: true,
+      },
+    );
     if (!updatedWork) {
       throw new NotFoundException(`Work with id ${id} not found`);
     }
     return updatedWork;
   }
 
-  async remove(id: string) {
-  }
+  async remove(id: string) {}
 }

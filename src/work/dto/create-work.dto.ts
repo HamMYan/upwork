@@ -11,8 +11,4 @@ export class CreateWorkDto {
     description: string
     @ApiProperty()
     skills: []
-    @ApiProperty()
-    apply: []
-    @ApiProperty()
-    user: string
 }

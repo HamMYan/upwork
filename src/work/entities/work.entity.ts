@@ -1,5 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from 'mongoose'
+import { type } from "os";
+import { Freelancer } from "src/freelancer/entities/freelancer.entity";
+import { Skill } from "src/skill/entities/skill.entity";
 import { User } from "src/user/entities/user.entity";
 
 
@@ -17,13 +20,15 @@ export class Work {
     deadline: string
     @Prop()
     description: string
-    @Prop()
-    skills: []
-    @Prop()
-    apply:[]
+
+    @Prop({type:[{type: mongoose.Schema.Types.ObjectId,ref: 'Skill'}]})
+    skills: Skill[]
+
+    @Prop({type:[{type: mongoose.Schema.Types.ObjectId,ref: 'Freelancer'}]})
+    apply: Freelancer[]
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
-    user: string
+    user: User
 }
 
 export const WorkSchema = SchemaFactory.createForClass(Work)

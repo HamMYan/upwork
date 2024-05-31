@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { ForGetPassword, UpdateUserDto } from './dto/update-user.dto';
 import { Model } from 'mongoose';
 import { User } from './entities/user.entity';
 import { v4 as uuid } from 'uuid';
@@ -9,6 +9,7 @@ import { Role } from './entities/role-enum';
 import * as bcrypt from 'bcrypt';
 import { Freelancer } from 'src/freelancer/entities/freelancer.entity';
 import { Customer } from 'src/customer/entities/customer.entity';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class UserService {
@@ -16,6 +17,7 @@ export class UserService {
     @InjectModel('User') private userModel: Model<User>,
     @InjectModel('Freelancer') private freelancerModel: Model<Freelancer>,
     @InjectModel('Customer') private customerModel: Model<Customer>,
+    private readonly emailService: EmailService
     ) {}
   
   async create(createUserDto: CreateUserDto) {
@@ -39,6 +41,11 @@ export class UserService {
       emailToken,
     });
 
+    const message = `<h1>Hello dear ${name}</h1> please click for verify
+     <a href='http://localhost:3000/auth/verify?email=${email}&emailToken=${emailToken}'>Verify</a>`
+
+    await this.emailService.sendMail('hammkrtchyan7@gmail.com','Shnorhakalutyun mer kayqum grancvelu hamar',message)
+
     if(role==Role.COSTUMER){
       const customer = await this.customerModel.create({user:us})
       await this.userModel.findByIdAndUpdate(us._id, {customer})
@@ -47,6 +54,50 @@ export class UserService {
       await this.userModel.findByIdAndUpdate(us._id, {freelancer})
     }
     return us;
+  }
+  async isVeryfy(email:string,emailToken:string){
+    const user = await this.userModel.findOne({email, emailToken})
+    if(user){
+      await this.userModel.findByIdAndUpdate(user,{
+        isVerify: 1,
+        emailToken: null
+      })
+      return {message: 'Veryfy succes'}
+    }else{
+      throw new NotFoundException('User not found')
+    }
+  }
+
+  async forgetPassword(email:string){
+    const user = await this.userModel.findOne({email})
+    if(user){
+      const code = Math.floor(Math.random() * 90000 + 10000)
+      await this.userModel.findByIdAndUpdate(user,{
+        emailToken: code
+      })
+      this.emailService.sendMail('hammkrtchyan7@gmail.com','Forget password',`${email} your code - ${code}`)
+      return 'We send your mail virification code'
+    }else{
+      throw new NotFoundException('User not found')
+    }
+  }
+
+  async resetPassword(email:string,forGetPassword:ForGetPassword){
+    const {code,newPassword,confirmPassword} = forGetPassword
+    const user = await this.userModel.findOne({email, emailToken:code})
+    if(user){
+      if(newPassword == confirmPassword){
+        await this.userModel.findByIdAndUpdate(user,{
+          emailToken: null,
+          password:bcrypt.hashSync(newPassword, 10)
+        })
+        return 'Your password changed'
+      }  else{
+        throw new BadRequestException('new password and coniform password is not')
+      }  
+    }else{
+      throw new NotFoundException('User not found')
+    }
   }
 
   async findOneByEmail(username: string){

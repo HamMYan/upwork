@@ -7,6 +7,7 @@ import {
   UseGuards,
   Request,
   Get,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -38,10 +39,24 @@ export class AuthController {
       return res.status(HttpStatus.BAD_REQUEST).json({ message: err.message });
     }
   }
+  
   @UseGuards(LocalAuthGuard)
   @Post('login')
   async login(@Request() req, @Body() log: Login) {
     return this.authService.login(req.user);
+  }
+  @Get('/verify')
+  async authVerify(
+    @Query('email') email:string,
+    @Query('emailToken') emailToken:string,
+    @Res() res: Response
+  ) {
+    try{
+      const data = await this.userService.isVeryfy(email,emailToken)
+      return res.status(HttpStatus.OK).json(data)
+    }catch(err){
+      return res.status(HttpStatus.BAD_REQUEST).json({message: err.message})
+    }
   }
 
   @UseGuards(JwtAuthGuard)

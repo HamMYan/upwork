@@ -21,7 +21,7 @@ export class User {
     email:string
     @Prop()
     password:string
-    @Prop()
+    @Prop({default:0})
     isVerify:number
     @Prop()
     emailToken:string

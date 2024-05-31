@@ -18,7 +18,7 @@ export class WorkController {
   @UseGuards(JwtAuthGuard, RoleGuard)
   @Post()
   async create(@Body() createWorkDto: CreateWorkDto, @Req() req) {
-    const newWork = await this.workService.create(createWorkDto,req)
+    const newWork = await this.workService.create(createWorkDto,req.user.id)
     return newWork;
   }
 

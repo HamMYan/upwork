@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from './entities/user.entity';
 import { FreelancerSchema } from 'src/freelancer/entities/freelancer.entity';
 import { CustomerSchema } from 'src/customer/entities/customer.entity';
+import { EmailService } from 'src/email/email.service';
 
 @Module({
   imports: [MongooseModule.forFeature([
@@ -13,7 +14,7 @@ import { CustomerSchema } from 'src/customer/entities/customer.entity';
     { name: 'Customer', schema: CustomerSchema }
 ])],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService, EmailService],
   exports: [UserService]
 })
 export class UserModule {}
