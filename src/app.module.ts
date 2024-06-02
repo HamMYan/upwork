@@ -13,9 +13,6 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { EmailService } from './email/email.service';
 
 
-console.log(process.env.EMAIL_USERNAME);
-console.log(process.env.EMAIL_PASSWORD);
-
 @Module({
   imports: [MongooseModule.forRoot('mongodb://127.0.0.1:27017/upwork'), 
   ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),

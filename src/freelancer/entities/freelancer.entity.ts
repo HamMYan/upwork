@@ -12,7 +12,6 @@ export class Freelancer {
     //Works that the freelancer is working at
     @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Work' }] })
     works: Work[]
-    // Works that the frelancer has applyed to
     @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Work' }] })
     apply: Work[]
     @Prop({default: 1000})

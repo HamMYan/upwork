@@ -48,6 +48,8 @@ export class WorkService {
     }
     return updatedWork;
   }
-
+  async applyWork(workId: string,id:string){
+    return id
+  }
   async remove(id: string) {}
 }

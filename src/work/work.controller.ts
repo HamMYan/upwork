@@ -7,6 +7,7 @@ import { HasRoles } from 'src/auth/has-roles.decorator';
 import { Role } from 'src/user/entities/role-enum';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RoleGuard } from 'src/auth/roles.guard';
+import { Freelancer } from 'src/freelancer/entities/freelancer.entity';
 
 @ApiTags('Work')
 @Controller('work')
@@ -37,8 +38,15 @@ export class WorkController {
     return this.workService.update(id, updateWorkDto);
   }
 
+  @Patch('applyWork/:id') 
+  async applyWork(@Param('id') workId:string,@Req() req) {
+      return await this.workService.applyWork(workId,req.user.id);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.workService.remove(id);
   }
+
+  
 }
