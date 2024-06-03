@@ -1,11 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateWorkDto } from './dto/create-work.dto';
-import { UpdateWorkDto } from './dto/update-work.dto';
+import { UpdateFreelancer, UpdateWorkDto } from './dto/update-work.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Work } from 'src/work/entities/work.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Skill } from 'src/skill/entities/skill.entity';
+import { Freelancer } from 'src/freelancer/entities/freelancer.entity';
+import { CustomerModule } from 'src/customer/customer.module';
+import { Customer } from 'src/customer/entities/customer.entity';
 
 @Injectable()
 export class WorkService {
@@ -13,6 +16,8 @@ export class WorkService {
     @InjectModel('Work') private workModel: Model<Work>,
     @InjectModel('User') private userModel: Model<User>,
     @InjectModel('Skill') private skillModel: Model<Skill>,
+    @InjectModel('Freelancer') private freelancerModel: Model<Freelancer>,
+    @InjectModel('Customer') private customerModel: Model<Customer>,
   ) {}
 
   async create(createWorkDto: CreateWorkDto, id: string) {
@@ -23,10 +28,10 @@ export class WorkService {
       if (skill) {
         const newWork = await this.workModel.create({
           ...createWorkDto,
-          user: us,
+          customer: us,
         });
         return newWork.save();
-      }else{
+      } else {
         throw new NotFoundException('Skill not found');
       }
     } else {
@@ -59,8 +64,79 @@ export class WorkService {
     }
     return updatedWork;
   }
-  async applyWork(workId: string, id: string) {
-    return id;
+  async applyWork(id, userId: string) {
+    const work = await this.workModel.findOne(id);
+    const user = await this.userModel.findOne({ where: { id: userId } });
+    if (work) {
+      if (user) {
+        const freelancer = await this.freelancerModel.findOne({ user });
+        if (freelancer) {
+          await this.workModel.findByIdAndUpdate(work, {
+            apply: [...work.apply, freelancer],
+          });
+
+          await this.freelancerModel.findByIdAndUpdate(freelancer, {
+            apply: [...freelancer.apply, work],
+          });
+        } else {
+          throw new NotFoundException('Freelancer not found');
+        }
+      } else {
+        throw new NotFoundException('User not found');
+      }
+    } else {
+      throw new NotFoundException('Work not found');
+    }
   }
-  async remove(id: string) {}
+  async doneWork(updateFreelancer: UpdateFreelancer, user: User) {
+    const customer = await this.customerModel.findOne({ user });
+    if (customer) {
+      const { freelancerId, workId } = updateFreelancer;
+      const work = await this.workModel.findOne({ _id: workId });
+      if (work) {
+        const freelancer = await this.freelancerModel.findOne({ _id: freelancerId });
+        if (freelancer) {
+          return await this.workModel.findByIdAndUpdate(
+            work,
+            {
+              freelancer,
+              apply:[]
+            }
+          )
+         
+        }else {
+          throw new NotFoundException('freelancer not found')
+        }
+      }else {
+        throw new NotFoundException('work not found')
+      }
+    } else {
+      throw new NotFoundException('customer not found')
+    }
+  }
+  async cancelWork(updateFreelancer: UpdateFreelancer, user: User) {
+    const customer = await this.customerModel.findOne({ user });
+    if (customer) {
+      const { freelancerId, workId } = updateFreelancer;
+      const work = await this.workModel.findOne({ _id: workId });
+      if (work) {
+        const freelancer = await this.freelancerModel.findOne({ _id: freelancerId });
+        if (freelancer) {
+          return await this.workModel.findByIdAndUpdate(
+            work,
+            {
+              apply:[...work.apply.filter(elm => elm!=freelancer)]
+            }
+          )
+         
+        }else {
+          throw new NotFoundException('freelancer not found')
+        }
+      }else {
+        throw new NotFoundException('work not found')
+      }
+    } else {
+      throw new NotFoundException('customer not found')
+    }
+  }
 }

@@ -13,3 +13,9 @@ export class UpdateWorkDto {
     @ApiProperty()
     skills: []
 }
+export class UpdateFreelancer{
+    @ApiProperty()
+    workId: string
+    @ApiProperty()
+    freelancerId: string
+}
