@@ -5,21 +5,32 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Work } from 'src/work/entities/work.entity';
 import { User } from 'src/user/entities/user.entity';
+import { Skill } from 'src/skill/entities/skill.entity';
 
 @Injectable()
 export class WorkService {
-  constructor(@InjectModel('Work') private workModel: Model<Work>,@InjectModel('User') private userModel: Model<User>) {}
+  constructor(
+    @InjectModel('Work') private workModel: Model<Work>,
+    @InjectModel('User') private userModel: Model<User>,
+    @InjectModel('Skill') private skillModel: Model<Skill>,
+  ) {}
 
   async create(createWorkDto: CreateWorkDto, id: string) {
     const us = await this.userModel.findById(id);
-    if(us){
-      const newWork = await this.workModel.create({
-        ...createWorkDto,
-        user: us,
-      });
-      return newWork.save();
-    }else{
-      throw new NotFoundException('User is undefined')
+    if (us) {
+      const { skills } = createWorkDto;
+      const skill = await this.skillModel.findOne({ where: { id: skills } });
+      if (skill) {
+        const newWork = await this.workModel.create({
+          ...createWorkDto,
+          user: us,
+        });
+        return newWork.save();
+      }else{
+        throw new NotFoundException('Skill not found');
+      }
+    } else {
+      throw new NotFoundException('User is undefined');
     }
   }
 
@@ -48,8 +59,8 @@ export class WorkService {
     }
     return updatedWork;
   }
-  async applyWork(workId: string,id:string){
-    return id
+  async applyWork(workId: string, id: string) {
+    return id;
   }
   async remove(id: string) {}
 }
