@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { SkillService } from './skill.service';
 import { CreateSkillDto } from './dto/create-skill.dto';
 import { UpdateSkillDto } from './dto/update-skill.dto';
@@ -17,27 +26,37 @@ export class SkillController {
   @HasRoles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RoleGuard)
   @Post()
-  create(@Body() createSkillDto: CreateSkillDto) {
-    return this.skillService.create(createSkillDto);
+  async create(@Body() createSkillDto: CreateSkillDto) {
+    return await this.skillService.create(createSkillDto);
   }
 
   @Get()
-  findAll() {
-    return this.skillService.findAll();
+  async findAll() {
+    return await this.skillService.findAll();
+  }
+  @Get('/findById/:id')
+  async findById(@Param("id") id: string) {
+    return await this.skillService.findById(id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.skillService.findOne(+id);
-  }
-
+  @ApiBearerAuth('JWT-auth')
+  @HasRoles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Post()
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSkillDto: UpdateSkillDto) {
-    return this.skillService.update(+id, updateSkillDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateSkillDto: UpdateSkillDto,
+  ) {
+    return await this.skillService.update(id, updateSkillDto);
   }
 
+  @ApiBearerAuth('JWT-auth')
+  @HasRoles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Post()
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.skillService.remove(+id);
+  async remove(@Param('id') id: string) {
+    return await this.skillService.remove(id);
   }
 }

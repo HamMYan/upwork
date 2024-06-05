@@ -24,12 +24,16 @@ export class WorkService {
     const us = await this.userModel.findById(id);
     if (us) {
       const { skills } = createWorkDto;
-      const skill = await this.skillModel.findOne({ where: { id: skills } });
+      const skill = await this.skillModel.findById({ id: skills });
       if (skill) {
         const newWork = await this.workModel.create({
           ...createWorkDto,
           customer: us,
         });
+        await this.skillModel.findByIdAndUpdate(skill, {
+          works: [skill.works, newWork],
+        });
+
         return newWork.save();
       } else {
         throw new NotFoundException('Skill not found');
@@ -44,7 +48,7 @@ export class WorkService {
   }
 
   async findOne(id: string) {
-    const work = await this.workModel.findById(id).exec();
+    const work = await this.workModel.findById(id).populate('skills');
     if (!work) {
       throw new NotFoundException(`Work with id ${id} not found`);
     }
@@ -65,8 +69,10 @@ export class WorkService {
     return updatedWork;
   }
   async applyWork(id, userId: string) {
-    const work = await this.workModel.findOne(id);
-    const user = await this.userModel.findOne({ where: { id: userId } });
+    const work = await this.workModel.findById(id);
+    const user = await this.userModel.findById(userId);
+    console.log(work, user);
+
     if (work) {
       if (user) {
         const freelancer = await this.freelancerModel.findOne({ user });
@@ -74,7 +80,6 @@ export class WorkService {
           await this.workModel.findByIdAndUpdate(work, {
             apply: [...work.apply, freelancer],
           });
-
           await this.freelancerModel.findByIdAndUpdate(freelancer, {
             apply: [...freelancer.apply, work],
           });
@@ -89,54 +94,65 @@ export class WorkService {
     }
   }
   async doneWork(updateFreelancer: UpdateFreelancer, user: User) {
-    const customer = await this.customerModel.findOne({ user });
+    const customer = await this.customerModel.find({ user: user._id });
     if (customer) {
       const { freelancerId, workId } = updateFreelancer;
-      const work = await this.workModel.findOne({ _id: workId });
+
+      const work = await this.workModel.findById(workId);
       if (work) {
-        const freelancer = await this.freelancerModel.findOne({ _id: freelancerId });
+        const freelancer = await this.freelancerModel.findById(freelancerId);
         if (freelancer) {
-          return await this.workModel.findByIdAndUpdate(
-            work,
-            {
-              freelancer,
-              apply:[]
-            }
-          )
-         
-        }else {
-          throw new NotFoundException('freelancer not found')
+          await this.freelancerModel.findByIdAndUpdate(freelancer, {
+            works: work,
+            apply: [],
+          });
+          return await this.workModel.findByIdAndUpdate(work, {
+            freelancer,
+            apply: [],
+          });
+        } else {
+          throw new NotFoundException('freelancer not found');
         }
-      }else {
-        throw new NotFoundException('work not found')
+      } else {
+        throw new NotFoundException('work not found');
       }
     } else {
-      throw new NotFoundException('customer not found')
+      throw new NotFoundException('customer not found');
     }
   }
+
   async cancelWork(updateFreelancer: UpdateFreelancer, user: User) {
-    const customer = await this.customerModel.findOne({ user });
+    const customer = await this.customerModel.find({ user: user._id });
     if (customer) {
       const { freelancerId, workId } = updateFreelancer;
-      const work = await this.workModel.findOne({ _id: workId });
+
+      const work = await this.workModel.findById(workId);
       if (work) {
-        const freelancer = await this.freelancerModel.findOne({ _id: freelancerId });
+        const freelancer = await this.freelancerModel.findById(freelancerId);
         if (freelancer) {
-          return await this.workModel.findByIdAndUpdate(
-            work,
-            {
-              apply:[...work.apply.filter(elm => elm!=freelancer)]
-            }
-          )
-         
-        }else {
-          throw new NotFoundException('freelancer not found')
+          await this.workModel.findByIdAndUpdate(work, {
+            apply: [...work.apply.filter((elm) => elm != freelancer)],
+          });
+          return await this.freelancerModel.findByIdAndUpdate(freelancer, {
+            apply: [],
+          });
+        } else {
+          throw new NotFoundException('freelancer not found');
         }
-      }else {
-        throw new NotFoundException('work not found')
+      } else {
+        throw new NotFoundException('work not found');
       }
     } else {
-      throw new NotFoundException('customer not found')
+      throw new NotFoundException('customer not found');
+    }
+  }
+  async delete(id: string) {
+    const work = await this.workModel.findById(id);
+    if (work) {
+      await this.workModel.findByIdAndDelete(id);
+      return 'Deletet';
+    } else {
+      throw new NotFoundException('Work not found');
     }
   }
 }

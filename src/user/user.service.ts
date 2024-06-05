@@ -1,7 +1,7 @@
 import { BadRequestException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
-import { ForGetPassword, UpdateUserDto } from './dto/update-user.dto';
+import { ForGetPassword, UpdateUserDto, UpdatePassword } from './dto/update-user.dto';
 import { Model } from 'mongoose';
 import { User } from './entities/user.entity';
 import { v4 as uuid } from 'uuid';
@@ -100,6 +100,31 @@ export class UserService {
     }
   }
 
+  async updatePassword(id: string, updatePassword: UpdatePassword) {
+    const user = await this.userModel.findById(id);
+    if (user) {
+      const { oldPassword, newPassword, confirmPassword } = updatePassword
+      if (bcrypt.compareSync(oldPassword, user.password)) {
+        if (newPassword == confirmPassword) {
+          await this.userModel.findByIdAndUpdate(id, { password: bcrypt.hashSync(newPassword, 10) })
+          return true
+        }
+        throw new BadRequestException('Password and confirmPassword do not match!')
+      }
+      throw new BadRequestException('Wrong old password!')
+    }
+    throw new NotFoundException('User not found!')
+  }
+
+  async updatePicUrl(id: string, picUrl: string) {
+    const user = await this.userModel.findById(id);
+    if (user) {
+      await this.userModel.findByIdAndUpdate(id, { picUrl })
+      return true
+    }
+    throw new NotFoundException('User not found!')
+  }
+
   async findOneByEmail(username: string){
     return await this.userModel.findOne({email:username});
   }
@@ -113,7 +138,16 @@ export class UserService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+    const user = await this.userModel.findById(id);
+    if (user) {
+      const { name, surname, age, phone, salary} = updateUserDto
+      if(salary && user.role == Role.FREELANCER) {
+        await this.freelancerModel.findByIdAndUpdate(id, { salary })
+      }
+      await this.userModel.findByIdAndUpdate(id, { name, surname, age, phone })
+      return true
+    }
+    throw new NotFoundException('User not found!')
   }
 
   async remove(id: string) {

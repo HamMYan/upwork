@@ -10,6 +10,8 @@ export class UpdateUserDto {
     age: number
     @ApiProperty()
     phone: string
+    @ApiProperty()
+    salary: number;
 }
 
 
